@@ -1,6 +1,7 @@
 package com.example.composeroomdbtester
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -29,17 +30,21 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,6 +62,8 @@ class MainActivity : ComponentActivity() {
 fun UserListScreen(userViewModel: UserViewModel = viewModel()) {
     var name = remember { mutableStateOf("") }
     var scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -74,10 +81,20 @@ fun UserListScreen(userViewModel: UserViewModel = viewModel()) {
             Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = {
-                    if (name.value.isNotEmpty()) {
-                        userViewModel.addUser(name.value)
-                        name.value = ""
+                    scope.launch {
+                        if (name.value.isNotEmpty() && !userViewModel.checkNameExists(name.value)) {
+                            userViewModel.addUser(name.value)
+                            name.value = ""
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Name already exists or input is empty",
+                                Toast.LENGTH_SHORT
+                            )
+                                .show()
+                        }
                     }
+
                 }, modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Add User")

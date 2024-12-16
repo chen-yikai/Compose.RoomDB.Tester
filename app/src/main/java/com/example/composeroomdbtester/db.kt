@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Delete
@@ -17,8 +18,10 @@ import kotlinx.coroutines.launch
 
 @Entity(tableName = "user")
 data class User(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0, val name: String
-)
+    @PrimaryKey(autoGenerate = true) val id: Int = 0, @ColumnInfo(name = "name") val name: String
+) {
+    constructor() : this(0, "")
+}
 
 @Dao
 interface UserDao {
@@ -33,6 +36,9 @@ interface UserDao {
 
     @Query("DELETE FROM user")
     suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM user WHERE name = :name")
+    suspend fun checkNameExists(name: String): Int
 }
 
 @Database(entities = [User::class], version = 1)
@@ -81,5 +87,11 @@ class UserViewModel(private val database: AppDatabase) : ViewModel() {
             updateUsers()
         }
     }
+
+    suspend fun checkNameExists(name: String): Boolean {
+        return database.userDao().checkNameExists(name) > 0
+    }
+
+
 
 }
